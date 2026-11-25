@@ -157,3 +157,4 @@ body.admin main{padding-top:20px}
 .form label input:not([type=checkbox]):not([type=radio]),.form label select,.form label textarea{display:block;width:100%;margin-top:5px;box-sizing:border-box}
 .form label.rad{display:flex}
 .row>*{min-width:0}.vehbox select{min-width:0}
+[hidden]{display:none!important}
