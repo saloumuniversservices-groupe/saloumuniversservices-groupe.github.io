@@ -1,6 +1,13 @@
 /* Boutique SUNS : réglages de base.
    FIREBASE : à remplir avec la configuration du projet Firebase de la boutique (Console Firebase › Paramètres du projet › Vos applications › Web). */
-window.SHOP_FIREBASE = null;
+window.SHOP_FIREBASE = {
+  apiKey: "AIzaSyAiVwXpq3lVcwR36p1A0by5IwN2EDN10fE",
+  authDomain: "suns-boutique.firebaseapp.com",
+  projectId: "suns-boutique",
+  storageBucket: "suns-boutique.firebasestorage.app",
+  messagingSenderId: "1041500654801",
+  appId: "1:1041500654801:web:331cb809ff4d645cd349f0"
+};
 /* Exemple :
 window.SHOP_FIREBASE = {
   apiKey: "…", authDomain: "….firebaseapp.com", projectId: "…",
