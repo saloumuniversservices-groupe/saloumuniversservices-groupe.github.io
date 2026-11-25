@@ -5,19 +5,25 @@ service cloud.firestore {
     function signedIn() { return request.auth != null && request.auth.token.email_verified == true; }
     function isOwner() { return signedIn() && request.auth.token.email == 'sunsgroupesarl@gmail.com'; }
     function isAdmin() { return isOwner() || (signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.token.email.lower()))); }
-
     function str(v, max) { return v is string && v.size() <= max; }
+
     function validOrder() {
       let o = request.resource.data;
-      return o.keys().hasOnly(['no','type','cat','items','subtotal','fee','total','zone','address','note','pay','service','details','name','phone','lang','status','createdAt'])
-        && o.status == 'nouvelle'
+      return o.keys().hasOnly(['no','type','cat','items','subtotal','fee','total','zone','address','note','pay','date','slot','accept','service','details','name','phone','lang','status','createdAt'])
+        && o.status == 'nouvelle' && o.accept == true
         && o.type in ['commande', 'devis']
         && o.cat in ['bmw', 'agro', 'tilapia', 'transport']
         && str(o.no, 20) && str(o.name, 80) && o.name.size() >= 2 && str(o.phone, 25)
         && o.items is list && o.items.size() <= 60
         && o.total is number && o.total >= 0
+        && (!('address' in o) || str(o.address, 200))
         && (!('details' in o) || str(o.details, 1000))
         && (!('note' in o) || str(o.note, 500));
+    }
+    function validTrack(no) {
+      let t = request.resource.data;
+      return t.keys().hasOnly(['status','type','cat','total','date','slot','zone','ph4','createdAt'])
+        && t.status == 'nouvelle' && str(t.ph4, 4) && t.total is number && no.size() <= 20;
     }
 
     match /products/{id} { allow read: if true; allow write: if isAdmin(); }
@@ -25,6 +31,13 @@ service cloud.firestore {
     match /orders/{id} {
       allow create: if validOrder();
       allow read, update, delete: if isAdmin();
+    }
+    // Suivi public : lecture seulement avec le numéro exact (pas de liste).
+    match /track/{no} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if validTrack(no) && !exists(/databases/$(db)/documents/track/$(no));
+      allow update, delete: if isAdmin();
     }
     match /admins/{email} {
       allow read: if isAdmin();

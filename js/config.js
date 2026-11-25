@@ -17,7 +17,12 @@ window.SHOP_DEFAULTS = {
     { name: "Banlieue (Pikine, Guédiawaye, Rufisque…)", fee: 1500 },
     { name: "Régions (prix confirmé par téléphone)", fee: 0 }
   ],
-  notice: ""
+  notice: "",
+  slots: ["Matin (9h – 13h)", "Après-midi (15h – 19h)"],
+  cutoff: 12,        // heure limite pour être livré le jour même
+  daysAhead: 4,      // jours proposés au client
+  closedDays: [0],   // 0 = dimanche (jours sans livraison)
+  minOrder: 0        // montant minimum (0 = pas de minimum)
 };
 window.SHOP_CATS = [
   { id: "bmw", fr: "Pièces BMW", en: "BMW parts", ico: "🚗" },
@@ -26,3 +31,6 @@ window.SHOP_CATS = [
   { id: "transport", fr: "Transport et services", en: "Transport & services", ico: "🚚" }
 ];
 window.SHOP_UNITS = { piece: ["pièce", "piece"], kg: ["kg", "kg"], sac: ["sac", "bag"], carton: ["carton", "box"], caisse: ["caisse", "crate"], lot: ["lot", "lot"], litre: ["litre", "litre"] };
+window.BMW_MODELS = ["Série 1", "Série 2", "Série 3", "Série 4", "Série 5", "Série 6", "Série 7", "Série 8", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "Z3", "Z4", "i3", "i4", "iX", "Mini"];
+window.PART_COND = { origine: ["Neuf d'origine BMW", "New genuine BMW"], adaptable: ["Neuf adaptable", "New aftermarket"], occasion: ["Occasion contrôlée", "Used, inspected"] };
+window.SITE_URL = "https://saloumuniversservices-groupe.com";
