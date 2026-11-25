@@ -180,7 +180,7 @@
     var wa = S.wa || {};
     var num = function (id, lab) { return '<label>' + lab + '<input id="w_' + id + '" inputmode="tel" value="' + esc(wa[id] || '') + '" placeholder="221771234567"></label>'; };
     return '<form id="sf" class="card form"><h3>WhatsApp qui reçoit les commandes</h3><p class="muted small">Numéro avec l\'indicatif, sans + ni espaces (ex. 221779483690).</p>' +
-      num('bmw', '🚗 Pièces BMW') + num('agro', '🌱 Fruits et légumes') + num('agro2', '🌱 Fruits et légumes (2e numéro)') + num('tilapia', '🐟 Tilapias') + num('transport', '🚚 Transport et services') +
+      num('bmw', '🚗 Pièces BMW') + num('agro', '🌱 Fruits et légumes') + num('agro2', '🌱 Fruits et légumes (2e numéro)') + num('tilapia', '🐟 Tilapias') + num('transport', '🚚 Transport et services') + num('repair', '🔧 Technique et réparation BMW') + num('repair2', '🔧 Technique et réparation (2e numéro)') +
       '<label>Numéro Wave pour les paiements<input id="sWave" value="' + esc(S.wave) + '"></label>' +
       '<h3>Zones de livraison</h3><p class="muted small">Une zone par ligne : nom ; frais en F (0 = gratuit ou à confirmer).</p>' +
       '<textarea id="sZones" rows="5">' + esc((S.zones || []).map(function (z) { return z.name + ' ; ' + (z.fee || 0); }).join('\n')) + '</textarea>' +
@@ -189,7 +189,7 @@
   }
   document.addEventListener('submit', function (e) {
     if (e.target.id !== 'sf') return; e.preventDefault();
-    var wa = {}; ['bmw', 'agro', 'agro2', 'tilapia', 'transport'].forEach(function (k) { wa[k] = $('w_' + k).value.replace(/\D/g, ''); });
+    var wa = {}; ['bmw', 'agro', 'agro2', 'tilapia', 'transport', 'repair', 'repair2'].forEach(function (k) { wa[k] = $('w_' + k).value.replace(/\D/g, ''); });
     var zones = $('sZones').value.split('\n').map(function (l) { var p = l.split(';'); return { name: (p[0] || '').trim(), fee: Math.max(0, parseInt((p[1] || '0').replace(/\D/g, ''), 10) || 0) }; }).filter(function (z) { return z.name; });
     db.collection('settings').doc('shop').set({ wa: wa, wave: $('sWave').value.trim(), zones: zones, notice: $('sNotice').value.trim(), updatedAt: Date.now(), updatedBy: me.email }, { merge: true })
       .then(function () { alert('Réglages enregistrés.'); }).catch(function (err) { alert('Refusé : ' + err.message); });

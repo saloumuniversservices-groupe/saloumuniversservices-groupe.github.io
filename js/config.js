@@ -9,7 +9,7 @@ window.SHOP_FIREBASE = {
 */
 window.SHOP_OWNER = "sunsgroupesarl@gmail.com";
 window.SHOP_DEFAULTS = {
-  wa: { bmw: "221779483690", agro: "221775929199", agro2: "221777281699", tilapia: "221775929199", transport: "221779483690" },
+  wa: { bmw: "221779483690", agro: "221775929199", agro2: "221777281699", tilapia: "221775929199", transport: "221779483690", repair: "221775374030", repair2: "221779483690" },
   wave: "+221 77 948 36 90",
   zones: [
     { name: "Retrait sur place", fee: 0 },

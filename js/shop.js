@@ -38,7 +38,7 @@
   }, function () { $('list').innerHTML = '<p class="muted">' + T('Impossible de charger les produits. Vérifiez la connexion.', 'Could not load products. Check your connection.') + '</p>'; });
 
   function waButtons() {
-    return '<div class="cta">' + CATS.map(function (c) { var n = S.wa[c.id]; return n ? '<a class="btn small" href="https://wa.me/' + n + '">' + c.ico + ' ' + esc(FR ? c.fr : c.en) + '</a>' : ''; }).join('') + '</div>';
+    return '<div class="cta">' + CATS.map(function (c) { var n = S.wa[c.id]; return n ? '<a class="btn small" href="https://wa.me/' + n + '">' + c.ico + ' ' + esc(FR ? c.fr : c.en) + '</a>' : ''; }).join('') + (S.wa.repair ? '<a class="btn small" href="https://wa.me/' + S.wa.repair + '">🔧 ' + T('Réparation BMW', 'BMW repair') + '</a>' : '') + '</div>';
   }
 
   function render() {
@@ -158,7 +158,7 @@
         var c = CATS.filter(function (x) { return x.id === o.cat; })[0] || {};
         return '<div class="card mini"><b>' + c.ico + ' ' + esc(FR ? c.fr : c.en) + ' · N° ' + o.no + '</b>' + (o.total ? '<br>' + money(o.total) + ' F' : '') +
           (o.pay === 'wave' ? '<br><small>' + T('Envoyez le paiement Wave au ', 'Send the Wave payment to ') + esc(S.wave) + T(' avec le numéro de commande.', ' with the order number.') + '</small>' : '') +
-          '<a class="btn wide" target="_blank" rel="noopener" href="https://wa.me/' + (S.wa[o.cat] || S.wa.bmw) + '?text=' + encodeURIComponent(waText(o)) + '">' + T('Envoyer aussi sur WhatsApp', 'Also send on WhatsApp') + '</a></div>';
+          '<a class="btn wide" target="_blank" rel="noopener" href="https://wa.me/' + ((o.type === 'devis' && /BMW/.test(o.service) && S.wa.repair) || S.wa[o.cat] || S.wa.bmw) + '?text=' + encodeURIComponent(waText(o)) + '">' + T('Envoyer aussi sur WhatsApp', 'Also send on WhatsApp') + '</a></div>';
       }).join(''));
   }
 
