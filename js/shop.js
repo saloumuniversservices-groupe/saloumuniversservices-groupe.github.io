@@ -313,6 +313,18 @@
     return c;
   }
   function waNum(n) { var d = String(n || '').replace(/\D/g, ''); return d.length === 9 ? '221' + d : d; }
+  /* Ouvre l'application Wave ou Max it. Android : lien « intent » vers l'appli (sinon Play Store). iPhone : App Store, qui propose « Ouvrir ». */
+  var APPS = { wave: { pkg: 'com.wave.personal', ios: 'https://apps.apple.com/sn/app/id1523884528' }, om: { pkg: 'com.orange.myorange.osn', ios: 'https://apps.apple.com/sn/app/id1039327980' } };
+  function appUrl(om) {
+    var a = APPS[om ? 'om' : 'wave'], ua = navigator.userAgent || '';
+    if (/android/i.test(ua)) return 'intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=' + a.pkg + ';S.browser_fallback_url=' + encodeURIComponent('https://play.google.com/store/apps/details?id=' + a.pkg) + ';end';
+    if (/iphone|ipad|ipod/i.test(ua)) return a.ios;
+    return 'https://play.google.com/store/apps/details?id=' + a.pkg;
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('a.paygo[data-num]'); if (!b) return;
+    try { if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.num); } catch (x) {}
+  });
   function payChoices() {
     var c = payCfg(), out = [], first = true;
     var opt = function (v, logo, label) { var h = '<label class="paypick ' + v + '"><input type="radio" name="pay" value="' + v + '"' + (first ? ' checked' : '') + '><span class="pp-logo">' + logo + '</span><span>' + label + '</span></label>'; first = false; return h; };
@@ -330,12 +342,13 @@
     var c = payCfg(), amt = money(o.total) + ' F', om = o.pay === 'om';
     var num = om ? (c.o.number || c.wnum) : c.wnum, app = om ? 'Orange Money' : 'Wave';
     var row = function (lab, val, copy) { return '<div class="payrow"><span class="small muted">' + lab + '</span><b>' + esc(val) + '</b><button type="button" class="btn small ghost dark" data-copy="' + esc(copy) + '">' + T('Copier', 'Copy') + '</button></div>'; };
-    var steps = om ? T('Composez #144#, choisissez « Transfert », mettez le numéro et le montant, puis votre code secret.', 'Dial #144#, choose “Transfer”, enter the number and the amount, then your PIN.')
-      : T('Ouvrez Wave, appuyez sur « Envoyer », collez le numéro et le montant, puis confirmez.', 'Open Wave, tap “Send”, paste the number and the amount, then confirm.');
+    var steps = om ? T('Appuyez sur « Ouvrir Max it » : le numéro est copié. Dans Max it, choisissez « Transfert », collez le numéro, mettez le montant, puis votre code secret.', 'Tap “Open Max it”: the number is copied. In Max it, choose “Transfer”, paste the number, enter the amount, then your PIN.')
+      : T('Appuyez sur « Ouvrir Wave » : le numéro est copié. Dans Wave, appuyez sur « Envoyer », collez le numéro, mettez le montant, puis confirmez.', 'Tap “Open Wave”: the number is copied. In Wave, tap “Send”, paste the number, enter the amount, then confirm.');
     return '<div class="paybox"><p class="small muted">' + T('Envoyez par ', 'Send by ') + app + '</p><p class="payamt">' + amt + '</p>' +
       row(T('Numéro ', 'Number ') + app, num, String(num).replace(/\s/g, '')) + row(T('Montant', 'Amount'), amt, o.total) +
       '<p class="small"><b>1.</b> ' + steps + '</p>' +
-      (om ? '<a class="btn wide paygo om" href="tel:%23144%23">' + T('Composer #144#', 'Dial #144#') + '</a>' : '') +
+      '<a class="btn wide paygo ' + (om ? 'om' : 'wave') + '" href="' + appUrl(om) + '" data-num="' + esc(String(num).replace(/\s/g, '')) + '">' + T('Ouvrir ', 'Open ') + (om ? 'Max it' : 'Wave') + '</a>' +
+      (om ? '<p class="small muted center">' + T('Pas d\'application ? ', 'No app? ') + '<a href="tel:%23144%23">' + T('Composez #144#', 'Dial #144#') + '</a></p>' : '') +
       '<p class="small"><b>2.</b> ' + T('Après l\'envoi, prévenez-nous avec votre numéro de commande ', 'After sending, let us know with your order number ') + '<b>' + esc(o.no) + '</b> :</p>' +
       '<a class="btn wide paid" target="_blank" rel="noopener" href="https://wa.me/' + waNum(c.notify) + '?text=' + encodeURIComponent(paidMsg(o)) + '">✅ ' + T('J\'ai payé', 'I have paid') + '</a></div>';
   }
