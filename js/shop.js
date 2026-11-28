@@ -7,7 +7,7 @@
   var ONLY = (root.dataset.cats || '').split(',').filter(Boolean);
   if (ONLY.length) CATS = CATS.filter(function (c) { return ONLY.indexOf(c.id) >= 0; });
   var SHOPK = root.dataset.shop ? '_' + root.dataset.shop : '';
-  var products = [], cat = CATS[0].id, cart = {}, db = null, veh = {}, onlyCompat = false, loaded = false;
+  var products = [], cat = CATS[0].id, cart = {}, db = null, veh = {}, onlyCompat = false, loaded = false, fam = '', shown = 48;
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var money = function (n) { return Math.round(n || 0).toLocaleString('fr-FR').replace(/ | /g, ' '); };
@@ -35,7 +35,7 @@
   }
   function score(p, q) {
     if (!q) return 1;
-    var text = [p.name, p.nameEn, p.ref, p.desc, (p.models || []).join(' ')].join(' ');
+    var text = [p.name, p.nameEn, p.ref, p.desc, p.family, (p.models || []).join(' ')].join(' ');
     var qc = compact(q);
     if (qc.length >= 5 && compact(p.ref).indexOf(qc) >= 0) return 3;
     var hay = norm(text), words = hay.split(/[^a-z0-9]+/);
@@ -61,7 +61,7 @@
   if (CATS.length < 2) $('tabs').hidden = true;
   $('tabs').innerHTML = CATS.map(function (c) { return '<button role="tab" data-c="' + c.id + '">' + c.ico + ' ' + esc(FR ? c.fr : c.en) + '</button>'; }).join('');
   $('tabs').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; cat = b.dataset.c; history.replaceState(null, '', '#' + cat); render(); };
-  $('q').oninput = render;
+  $('q').oninput = function () { shown = 48; render(); };
   $('sf').onsubmit = function (e) { e.preventDefault(); $('q').blur(); render(); };
   var h0 = location.hash.slice(1);
   if (CATS.some(function (c) { return c.id === h0; })) cat = h0;
@@ -113,18 +113,27 @@
     if (!db) { updateCart(); return; }
     if (!loaded) return;
     var q = $('q').value.trim();
-    var l = products.filter(function (p) { return p.cat === cat; }).map(function (p) { return { p: p, s: score(p, q), c: cat === 'bmw' ? compatible(p) : null }; })
+    // Rayons (familles) de la boutique, rangés par ordre alphabétique
+    var fl = $('fam');
+    if (!fl) { fl = document.createElement('div'); fl.id = 'fam'; fl.className = 'chips'; $('qinfo').parentNode.insertBefore(fl, $('qinfo')); fl.onclick = function (e) { var b = e.target.closest('[data-f]'); if (!b) return; fam = b.dataset.f; shown = 48; render(); }; }
+    var fc = {}; products.forEach(function (p) { if (p.cat === cat && p.family) fc[p.family] = (fc[p.family] || 0) + 1; });
+    var fk = Object.keys(fc).sort(function (x, y) { return x.localeCompare(y, 'fr'); });
+    if (fam && !fc[fam]) fam = '';
+    fl.hidden = fk.length < 2;
+    fl.innerHTML = '<button type="button" data-f=""' + (fam ? '' : ' class="on"') + '>' + T('Tous les rayons', 'All sections') + '</button>' + fk.map(function (k) { return '<button type="button" data-f="' + esc(k) + '"' + (fam === k ? ' class="on"' : '') + '>' + esc(k) + ' <span class="small">' + fc[k] + '</span></button>'; }).join('');
+    var l = products.filter(function (p) { return p.cat === cat && (!fam || p.family === fam); }).map(function (p) { return { p: p, s: score(p, q), c: cat === 'bmw' ? compatible(p) : null }; })
       .filter(function (x) { return x.s > 0 && !(onlyCompat && veh.model && x.c === false); });
     l.sort(function (a, b) { return (b.s - a.s) || ((b.c === true) - (a.c === true)) || ((b.c === 'all') - (a.c === 'all')); });
     if (q) $('qinfo').textContent = l.length + ' ' + T('résultat(s) pour', 'result(s) for') + ' « ' + q + ' »';
-    $('list').innerHTML = l.length ? l.map(function (x) { return card(x.p, x.c); }).join('') :
+    if (!q && !fam && l.length > shown) $('qinfo').textContent = l.length + ' ' + T('produits', 'products');
+    $('list').innerHTML = l.length ? l.slice(0, shown).map(function (x) { return card(x.p, x.c); }).join('') + (l.length > shown ? '<div style="grid-column:1/-1;text-align:center"><button type="button" class="btn ghost dark" id="more">' + T('Voir plus de produits', 'See more products') + ' (' + (l.length - shown) + ')</button></div>' : '') :
       '<div class="card"><p>' + (q ? T('Aucun produit ne correspond à « ', 'No product matches “') + esc(q) + T(' ». ', '”. ') : T('Pas encore de produit dans ce rayon. ', 'No product here yet. ')) +
       T('Demandez-nous directement :', 'Ask us directly:') + '</p><a class="btn small" target="_blank" rel="noopener" href="https://wa.me/' + (S.wa[cat] || S.wa.bmw) + '?text=' + encodeURIComponent(T('Bonjour, je cherche : ', 'Hello, I am looking for: ') + q + (cat === 'bmw' && veh.model ? ' (' + veh.model + ' ' + (veh.year || '') + ')' : '')) + '">💬 WhatsApp</a></div>';
     updateCart();
   }
   function badge(c) {
     if (c === true) return '<span class="tag ok">✓ ' + T('Compatible', 'Fits') + ' ' + esc(veh.model) + '</span>';
-    if (c === 'all') return '<span class="tag">' + T('Toutes BMW', 'All BMW') + '</span>';
+    if (c === 'all') return '';
     if (c === false) return '<span class="tag no">' + T('Autre modèle', 'Other model') + '</span>';
     return '';
   }
@@ -146,6 +155,7 @@
   }
   function bump(id, d) { cart[id] = Math.max(0, (cart[id] || 0) + d); if (!cart[id]) delete cart[id]; save(); }
   $('list').onclick = function (e) {
+    if (e.target.id === 'more') { shown += 48; render(); return; }
     var b = e.target.closest('button[data-a]');
     if (b) { bump(b.dataset.id, b.dataset.a === '+' ? 1 : -1); render(); return; }
     var c = e.target.closest('[data-open]'); if (c) openProduct(c.dataset.open);
@@ -173,7 +183,7 @@
       (weighed(p) ? '<p class="note small">⚖️ ' + T('Prix au kilo : le poids réel est pesé à la préparation. Nous vous appelons si le total change.', 'Price per kilo: the real weight is measured when packing. We call you if the total changes.') + '</p>' : '') +
       '<table class="tbl spec">' +
       (p.ref ? '<tr><td>' + T('Référence(s) OEM', 'OEM number(s)') + '</td><td>' + esc(p.ref) + '</td></tr>' : '') +
-      (p.cat === 'bmw' ? '<tr><td>' + T('Compatibilité', 'Fits') + '</td><td>' + (p.models && p.models.length ? esc(p.models.join(', ')) : T('Toutes BMW', 'All BMW')) + (p.yearFrom || p.yearTo ? ' · ' + (p.yearFrom || '…') + '–' + (p.yearTo || '…') : '') + '</td></tr>' : '') +
+      (p.cat === 'bmw' ? '<tr><td>' + T('Compatibilité', 'Fits') + '</td><td>' + (p.models && p.models.length ? esc(p.models.join(', ')) : T('Voir les codes châssis dans le nom (ex. F10, G05)', 'See chassis codes in the name (e.g. F10, G05)')) + (p.yearFrom || p.yearTo ? ' · ' + (p.yearFrom || '…') + '–' + (p.yearTo || '…') : '') + '</td></tr>' : '') +
       (p.cond && COND[p.cond] ? '<tr><td>' + T('État', 'Condition') + '</td><td>' + COND[p.cond][FR ? 0 : 1] + '</td></tr>' : '') +
       (p.warranty ? '<tr><td>' + T('Garantie', 'Warranty') + '</td><td>' + esc(p.warranty) + '</td></tr>' : '') +
       '<tr><td>' + T('Disponibilité', 'Availability') + '</td><td>' + (p.inStock === false ? T('Épuisé', 'Out of stock') : '✓ ' + T('En stock', 'In stock')) + '</td></tr></table>' +
