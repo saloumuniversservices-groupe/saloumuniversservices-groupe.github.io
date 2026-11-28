@@ -313,11 +313,6 @@
     return c;
   }
   function waNum(n) { var d = String(n || '').replace(/\D/g, ''); return d.length === 9 ? '221' + d : d; }
-  function waveUrl(link, amount) {
-    if (!link) return '';
-    if (/[?&]amount=/.test(link)) return link.replace(/([?&]amount=)[^&]*/, '$1' + amount);
-    return link + (link.indexOf('?') >= 0 ? '&' : '?') + 'amount=' + amount;
-  }
   function payChoices() {
     var c = payCfg(), out = [], first = true;
     var opt = function (v, logo, label) { var h = '<label class="paypick ' + v + '"><input type="radio" name="pay" value="' + v + '"' + (first ? ' checked' : '') + '><span class="pp-logo">' + logo + '</span><span>' + label + '</span></label>'; first = false; return h; };
@@ -332,22 +327,16 @@
       o.name + ' · ' + o.phone + (o.zone ? '\n' + o.zone : '') + (o.address ? ' · ' + o.address : '');
   }
   function payBox(o) {
-    var c = payCfg(), amt = money(o.total) + ' F', om = o.pay === 'om', go = '', info = '';
-    if (!om) {
-      var u = waveUrl(c.w.link, o.total);
-      go = u ? '<a class="btn wide paygo wave" target="_blank" rel="noopener" href="' + esc(u) + '">' + T('Payer ', 'Pay ') + amt + T(' avec Wave', ' with Wave') + '</a>' : '';
-      info = T('Numéro Wave : ', 'Wave number: ') + '<b>' + esc(c.wnum) + '</b>';
-    } else {
-      var ol = c.o.link || 'tel:%23144%23';
-      go = '<a class="btn wide paygo om"' + (c.o.link ? ' target="_blank" rel="noopener"' : '') + ' href="' + esc(ol) + '">' + T('Payer ', 'Pay ') + amt + T(' avec Orange Money', ' with Orange Money') + '</a>';
-      info = (c.o.code ? T('Code marchand : ', 'Merchant code: ') + '<b>' + esc(c.o.code) + '</b>' : '') + (c.o.number ? (c.o.code ? ' · ' : '') + T('Numéro : ', 'Number: ') + '<b>' + esc(c.o.number) + '</b>' : '');
-    }
-    var steps = om || !c.w.link ? T('Dans l\'application, payez le montant ci-dessus avec le motif.', 'In the app, pay the amount above with the reference.') : T('Wave s\'ouvre avec le montant déjà rempli : confirmez avec votre code.', 'Wave opens with the amount filled in: confirm with your PIN.');
-    return '<div class="paybox"><p class="small muted">' + T('Montant à payer', 'Amount to pay') + '</p><p class="payamt">' + amt + '</p>' +
-      '<p class="small">' + T('Motif : ', 'Reference: ') + '<b>' + esc(o.no) + '</b>' + (info ? ' · ' + info : '') + '</p>' +
-      '<p class="small"><b>1.</b> ' + steps + '</p>' + go +
-      '<div class="cta"><button type="button" class="btn small ghost dark" data-copy="' + o.total + '">' + T('Copier le montant', 'Copy amount') + '</button></div>' +
-      '<p class="small"><b>2.</b> ' + T('Après le paiement, prévenez-nous :', 'After paying, let us know:') + '</p>' +
+    var c = payCfg(), amt = money(o.total) + ' F', om = o.pay === 'om';
+    var num = om ? (c.o.number || c.wnum) : c.wnum, app = om ? 'Orange Money' : 'Wave';
+    var row = function (lab, val, copy) { return '<div class="payrow"><span class="small muted">' + lab + '</span><b>' + esc(val) + '</b><button type="button" class="btn small ghost dark" data-copy="' + esc(copy) + '">' + T('Copier', 'Copy') + '</button></div>'; };
+    var steps = om ? T('Composez #144#, choisissez « Transfert », mettez le numéro et le montant, puis votre code secret.', 'Dial #144#, choose “Transfer”, enter the number and the amount, then your PIN.')
+      : T('Ouvrez Wave, appuyez sur « Envoyer », collez le numéro et le montant, puis confirmez.', 'Open Wave, tap “Send”, paste the number and the amount, then confirm.');
+    return '<div class="paybox"><p class="small muted">' + T('Envoyez par ', 'Send by ') + app + '</p><p class="payamt">' + amt + '</p>' +
+      row(T('Numéro ', 'Number ') + app, num, String(num).replace(/\s/g, '')) + row(T('Montant', 'Amount'), amt, o.total) +
+      '<p class="small"><b>1.</b> ' + steps + '</p>' +
+      (om ? '<a class="btn wide paygo om" href="tel:%23144%23">' + T('Composer #144#', 'Dial #144#') + '</a>' : '') +
+      '<p class="small"><b>2.</b> ' + T('Après l\'envoi, prévenez-nous avec votre numéro de commande ', 'After sending, let us know with your order number ') + '<b>' + esc(o.no) + '</b> :</p>' +
       '<a class="btn wide paid" target="_blank" rel="noopener" href="https://wa.me/' + waNum(c.notify) + '?text=' + encodeURIComponent(paidMsg(o)) + '">✅ ' + T('J\'ai payé', 'I have paid') + '</a></div>';
   }
   function orderNo() {
@@ -398,7 +387,7 @@
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-copy]'); if (!b) return;
-    var v = b.dataset.copy, ok = function () { b.textContent = T('Montant copié ✓', 'Amount copied ✓'); };
+    var v = b.dataset.copy, ok = function () { b.textContent = T('Copié ✓', 'Copied ✓'); };
     if (navigator.clipboard) navigator.clipboard.writeText(v).then(ok, ok); else ok();
   });
   function thanks(list) {
