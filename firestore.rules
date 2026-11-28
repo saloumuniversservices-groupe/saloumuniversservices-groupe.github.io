@@ -41,7 +41,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if canStock(request.resource.data.cat);
       allow update: if (canStock(resource.data.cat) && canStock(request.resource.data.cat))
-        || (hasRole(['vendeur']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'qty', 'inStock', 'updatedAt', 'updatedBy']));
+        || (hasRole(['vendeur', 'atelier']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'qty', 'inStock', 'updatedAt', 'updatedBy']));
       allow delete: if isOwner();
     }
     // Prix d'achat : jamais visibles par le public.
@@ -52,7 +52,7 @@ service cloud.firestore {
     // Mouvements de stock : chacun écrit les siens, personne ne modifie ni n'efface.
     match /stockMoves/{id} {
       allow read: if isOwner() || isStaff();
-      allow create: if (hasRole(['magasinier', 'agro', 'vendeur']) || isLegacyAdmin())
+      allow create: if (hasRole(['magasinier', 'agro', 'vendeur', 'atelier']) || isLegacyAdmin())
         && request.resource.data.by == me()
         && request.resource.data.at == request.time
         && request.resource.data.delta is number
@@ -63,13 +63,13 @@ service cloud.firestore {
     // Caisse : ventes numérotées. Personne ne les efface ; seul un propriétaire peut annuler (motif gardé).
     match /counters/{id} {
       allow read: if isOwner() || isStaff();
-      allow create, update: if hasRole(['vendeur', 'magasinier', 'agro'])
+      allow create, update: if (isOwner() || isStaff())
         && request.resource.data.keys().hasOnly(['n'])
         && request.resource.data.n == (resource == null ? 1 : resource.data.n + 1);
     }
     match /sales/{id} {
-      allow read: if hasRole(['vendeur', 'magasinier', 'agro', 'comptable']);
-      allow create: if hasRole(['vendeur', 'magasinier', 'agro'])
+      allow read: if hasRole(['vendeur', 'magasinier', 'agro', 'comptable', 'atelier']);
+      allow create: if hasRole(['vendeur', 'magasinier', 'agro', 'atelier'])
         && request.resource.data.by == me()
         && request.resource.data.at == request.time
         && request.resource.data.status == 'validee'
@@ -98,6 +98,47 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isOwner();
     }
+
+    // Clients, paiements de créances, retours clients.
+    function sellers() { return hasRole(['vendeur', 'magasinier', 'agro', 'comptable', 'atelier']); }
+    function own() { return request.resource.data.by == me() && request.resource.data.at == request.time; }
+    match /clients/{id} { allow read: if isOwner() || isStaff(); allow create, update: if sellers(); allow delete: if isOwner(); }
+    match /payments/{id} {
+      allow read: if sellers();
+      allow create: if sellers() && own() && request.resource.data.amount is number && request.resource.data.amount > 0;
+      allow update, delete: if false;
+    }
+    match /returns/{id} {
+      allow read: if sellers();
+      allow create: if hasRole(['vendeur', 'magasinier', 'agro']) && own() && request.resource.data.amount is number && request.resource.data.amount >= 0;
+      allow update, delete: if false;
+    }
+    // Achats, fournisseurs, paiements fournisseurs, dépenses.
+    function buyers() { return hasRole(['magasinier', 'comptable', 'agro']); }
+    match /suppliers/{id} { allow read: if isOwner() || isStaff(); allow create, update: if buyers(); allow delete: if isOwner(); }
+    match /purchases/{id} {
+      allow read: if buyers();
+      allow create: if buyers() && own();
+      allow update: if buyers() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'receivedAt', 'receivedBy', 'returns', 'avoir'])
+        && (request.resource.data.status != 'annulee' || isOwner());
+      allow delete: if false;
+    }
+    match /supplierPayments/{id} {
+      allow read: if buyers();
+      allow create: if buyers() && own() && request.resource.data.amount is number && request.resource.data.amount > 0;
+      allow update, delete: if false;
+    }
+    match /expenses/{id} {
+      allow read: if hasRole(['comptable']) || (isStaff() && resource.data.by == me());
+      allow create: if hasRole(['comptable', 'magasinier', 'vendeur', 'agro', 'atelier']) && own() && request.resource.data.amount is number && request.resource.data.amount > 0 && request.resource.data.status == 'ok';
+      allow update: if isOwner() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason', 'cancelBy']) && request.resource.data.status == 'annulee';
+      allow delete: if false;
+    }
+    // Atelier : véhicules, réparations, rendez-vous.
+    function garage() { return hasRole(['atelier', 'vendeur', 'magasinier']); }
+    match /vehicles/{id} { allow read: if isOwner() || isStaff(); allow create, update: if garage(); allow delete: if isOwner(); }
+    match /repairs/{id} { allow read: if garage() || hasRole(['comptable']); allow create, update: if garage(); allow delete: if false; }
+    match /appointments/{id} { allow read: if garage(); allow create, update: if garage(); allow delete: if isOwner(); }
 
     // ---------- Logiciel de gestion ----------
     // Personnel : seuls les propriétaires invitent, modifient ou retirent.
