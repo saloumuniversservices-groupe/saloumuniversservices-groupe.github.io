@@ -1,10 +1,18 @@
 rules_version = '2';
-// Règles de la boutique SUNS (projet Firebase de la boutique uniquement).
+// Règles du projet suns-boutique : site, boutiques et logiciel de gestion.
+// Propriétaires : voient tout, invitent et retirent le personnel. Personne ne peut effacer le journal.
 service cloud.firestore {
   match /databases/{db}/documents {
     function signedIn() { return request.auth != null && request.auth.token.email_verified == true; }
-    function isOwner() { return signedIn() && request.auth.token.email == 'sunsgroupesarl@gmail.com'; }
-    function isAdmin() { return isOwner() || (signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.token.email.lower()))); }
+    function me() { return request.auth.token.email.lower(); }
+    function isOwner() { return signedIn() && me() in ['mandiayembow4@gmail.com', 'sunsgroupesarl@gmail.com']; }
+    function staffDoc() { return /databases/$(db)/documents/staff/$(me()); }
+    function isStaff() { return signedIn() && exists(staffDoc()) && get(staffDoc()).data.active == true; }
+    function role() { return get(staffDoc()).data.role; }
+    function hasRole(list) { return isOwner() || (isStaff() && role() in list); }
+    // Ancienne liste d'administrateurs de la boutique (admin.html), gardée le temps de la bascule.
+    function isLegacyAdmin() { return signedIn() && exists(/databases/$(db)/documents/admins/$(me())); }
+    function isAdmin() { return isOwner() || isLegacyAdmin() || hasRole(['vendeur', 'magasinier', 'agro']); }
     function str(v, max) { return v is string && v.size() <= max; }
 
     function validOrder() {
@@ -26,22 +34,49 @@ service cloud.firestore {
         && t.status == 'nouvelle' && str(t.ph4, 4) && t.total is number && no.size() <= 20;
     }
 
+    // ---------- Boutiques ----------
     match /products/{id} { allow read: if true; allow write: if isAdmin(); }
     match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
     match /orders/{id} {
       allow create: if validOrder();
-      allow read, update, delete: if isAdmin();
+      allow read, update: if isAdmin();
+      allow delete: if isOwner();
     }
-    // Suivi public : lecture seulement avec le numéro exact (pas de liste).
     match /track/{no} {
       allow get: if true;
       allow list: if isAdmin();
       allow create: if validTrack(no) && !exists(/databases/$(db)/documents/track/$(no));
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isOwner();
     }
     match /admins/{email} {
       allow read: if isAdmin();
       allow write: if isOwner();
+    }
+
+    // ---------- Logiciel de gestion ----------
+    // Personnel : seuls les propriétaires invitent, modifient ou retirent.
+    // La personne invitée peut seulement lire sa fiche et noter sa dernière connexion.
+    match /staff/{email} {
+      allow read: if isOwner() || (signedIn() && me() == email);
+      allow create, update, delete: if isOwner()
+        && (request.resource == null || (request.resource.data.role in ['vendeur','magasinier','atelier','comptable','agro']
+            && str(request.resource.data.email, 120) && request.resource.data.email == email));
+      allow update: if signedIn() && me() == email && exists(staffDoc())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen', 'status', 'name'])
+        && (!('status' in request.resource.data) || request.resource.data.status in ['actif', resource.data.status])
+        && str(request.resource.data.get('name', ''), 80);
+    }
+    // Journal : chacun écrit ses propres actions, personne ne modifie ni n'efface. Lecture : propriétaires.
+    match /journal/{id} {
+      allow create: if (isOwner() || isStaff())
+        && request.resource.data.keys().hasOnly(['type', 'text', 'by', 'byName', 'at', 'extra'])
+        && request.resource.data.by == me()
+        && request.resource.data.at == request.time
+        && str(request.resource.data.text, 300)
+        && request.resource.data.type in ['equipe', 'connexion', 'argent', 'stock', 'vente', 'achat', 'atelier', 'annulation', 'reglage'];
+      allow read: if isOwner();
+      allow update, delete: if false;
     }
   }
 }
