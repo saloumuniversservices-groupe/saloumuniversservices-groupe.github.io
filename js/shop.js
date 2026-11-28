@@ -158,6 +158,11 @@
     return n ? '<div class="qty"><button data-a="-" data-id="' + p.id + '" aria-label="−">−</button><b>' + n + '</b><button data-a="+" data-id="' + p.id + '" aria-label="+">+</button></div>'
       : '<button class="btn add" data-a="+" data-id="' + p.id + '">' + T('Ajouter au panier', 'Add to cart') + '</button>';
   }
+  /* Rupture : le client demande à être prévenu sur WhatsApp, avec le nom et la référence de la pièce. */
+  function notifyLink(p) {
+    var msg = T('Bonjour, la pièce suivante est en rupture sur votre site. Pouvez-vous me prévenir quand elle revient, ou me la commander ?', 'Hello, this part is out of stock on your website. Can you tell me when it is back, or order it for me?') + '\n' + pname(p) + (p.ref ? ' (' + p.ref + ')' : '') + (veh.model ? '\n' + T('Mon véhicule : BMW ', 'My car: BMW ') + veh.model + ' ' + (veh.year || '') : '') + '\n' + window.SITE_URL + '/' + (FR ? 'boutique.html' : 'shop.html') + '#p=' + encodeURIComponent(p.id);
+    return 'https://wa.me/' + (S.wa[p.cat] || S.wa.bmw) + '?text=' + encodeURIComponent(msg);
+  }
   function card(p, c) {
     var n = cart[p.id] || 0, out = p.inStock === false, pr = price(p);
     return '<div class="pcard' + (out ? ' out' : '') + '" data-open="' + p.id + '">' +
@@ -168,12 +173,13 @@
       (p.ref ? '<p class="ref">' + esc(p.ref) + '</p>' : '') +
       (p.cond && COND[p.cond] ? '<p class="ref">' + COND[p.cond][FR ? 0 : 1] + '</p>' : '') +
       '<p class="price">' + (pr !== p.price ? '<s>' + money(p.price) + '</s> ' : '') + money(pr) + ' F <span>/ ' + unit(p.unit) + '</span></p>' +
-      (out ? '<p class="oos">' + T('Épuisé', 'Out of stock') + '</p>' : qtyCtl(p, n)) +
+      (out ? '<p class="oos">' + T('En rupture · disponible sur commande', 'Out of stock · available to order') + '</p><a class="btn small notify" target="_blank" rel="noopener" href="' + notifyLink(p) + '">💬 ' + T('Me prévenir sur WhatsApp', 'Notify me on WhatsApp') + '</a>' : qtyCtl(p, n)) +
       '</div></div>';
   }
   function bump(id, d) { cart[id] = Math.max(0, (cart[id] || 0) + d); if (!cart[id]) delete cart[id]; save(); }
   $('list').onclick = function (e) {
     if (e.target.id === 'more') { shown += 48; render(); return; }
+    if (e.target.closest('a')) return;
     var b = e.target.closest('button[data-a]');
     if (b) { bump(b.dataset.id, b.dataset.a === '+' ? 1 : -1); render(); return; }
     var c = e.target.closest('[data-open]'); if (c) openProduct(c.dataset.open);
@@ -205,9 +211,9 @@
       (p.cat === 'bmw' ? '<tr><td>' + T('Compatibilité', 'Fits') + '</td><td>' + (p.models && p.models.length ? esc(p.models.join(', ')) : (function () { var cs = window.BMW ? window.BMW.codesIn(p.name) : []; if (!cs.length) return T('Demandez-nous sur WhatsApp', 'Ask us on WhatsApp'); var ms = []; cs.forEach(function (c) { window.BMW.modelsOf(c).forEach(function (m) { if (ms.indexOf(m) < 0) ms.push(m); }); }); return esc(ms.join(', ') + ' (' + cs.join(', ') + ')'); })()) + (p.yearFrom || p.yearTo ? ' · ' + (p.yearFrom || '…') + '–' + (p.yearTo || '…') : '') + '</td></tr>' : '') +
       (p.cond && COND[p.cond] ? '<tr><td>' + T('État', 'Condition') + '</td><td>' + COND[p.cond][FR ? 0 : 1] + '</td></tr>' : '') +
       (p.warranty ? '<tr><td>' + T('Garantie', 'Warranty') + '</td><td>' + esc(p.warranty) + '</td></tr>' : '') +
-      '<tr><td>' + T('Disponibilité', 'Availability') + '</td><td>' + (p.inStock === false ? T('Épuisé', 'Out of stock') : '✓ ' + T('En stock', 'In stock')) + '</td></tr></table>' +
+      '<tr><td>' + T('Disponibilité', 'Availability') + '</td><td>' + (p.inStock === false ? T('En rupture de stock, disponible sur commande', 'Out of stock, available to order') : '✓ ' + T('En stock', 'In stock')) + '</td></tr></table>' +
       (p.desc ? '<p>' + esc(p.desc).replace(/\n/g, '<br>') + '</p>' : '') +
-      (p.inStock === false ? '' : '<div id="pq">' + qtyCtl(p, cart[p.id] || 0) + '</div>') +
+      (p.inStock === false ? '<div class="note">' + T('Cette pièce est en rupture pour le moment. Écrivez-nous : nous vous prévenons dès son retour, ou nous la commandons pour vous.', 'This part is out of stock for now. Message us: we tell you when it is back, or we order it for you.') + '</div><a class="btn wide notify" target="_blank" rel="noopener" href="' + notifyLink(p) + '">💬 ' + T('Me prévenir sur WhatsApp', 'Notify me on WhatsApp') + '</a>' : '<div id="pq">' + qtyCtl(p, cart[p.id] || 0) + '</div>') +
       (p.cat === 'bmw' ? '<a class="btn ghost dark wide" target="_blank" rel="noopener" href="https://wa.me/' + S.wa.bmw + '?text=' + encodeURIComponent(ask) + '">💬 ' + T('Vérifier la compatibilité sur WhatsApp', 'Check fit on WhatsApp') + '</a>' : '') +
       '<a class="btn ghost dark wide" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(share) + '">↗ ' + T('Partager ce produit', 'Share this product') + '</a>');
     if (p.spin && window.SPIN) window.SPIN.load(db, p.id).then(function (rows) { var bx = $('spinBox'); if (bx) { if (rows.length) window.SPIN.viewer(bx, rows, { alt: pname(p), hint: T('Glissez pour faire tourner', 'Drag to rotate') }); else bx.remove(); } }).catch(function () { var bx = $('spinBox'); if (bx) bx.remove(); });
