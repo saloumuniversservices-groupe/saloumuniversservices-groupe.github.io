@@ -14,7 +14,7 @@
   var unit = function (u) { var x = UNITS[u] || UNITS.piece; return FR ? x[0] : x[1]; };
   var price = function (p) { return p.promo > 0 && p.promo < p.price ? p.promo : p.price; };
   var pname = function (p) { return FR || !p.nameEn ? p.name : p.nameEn; };
-  var weighed = function (p) { return (p.cat === 'agro' || p.cat === 'tilapia') && p.unit === 'kg'; };
+  var weighed = function (p) { return (p.cat === 'agro' || p.cat === 'legumes' || p.cat === 'tilapia') && p.unit === 'kg'; };
   var catOf = function (id) { return CATS.filter(function (c) { return c.id === id; })[0] || {}; };
   var store = { get: function (k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
   cart = store.get('suns_cart' + SHOPK, {}); veh = store.get('suns_bmw', {}); onlyCompat = !!veh.only;

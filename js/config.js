@@ -16,7 +16,7 @@ window.SHOP_FIREBASE = {
 */
 window.SHOP_OWNER = "sunsgroupesarl@gmail.com";
 window.SHOP_DEFAULTS = {
-  wa: { bmw: "221779483690", agro: "221775929199", agro2: "221777281699", tilapia: "221775929199", transport: "221779483690", repair: "221775374030", repair2: "221779483690" },
+  wa: { bmw: "221779483690", agro: "221775929199", agro2: "221777281699", legumes: "221775929199", tilapia: "221775929199", transport: "221779483690", repair: "221775374030", repair2: "221779483690" },
   wave: "+221 77 948 36 90",
   zones: [
     { name: "Retrait sur place", fee: 0 },
@@ -33,8 +33,9 @@ window.SHOP_DEFAULTS = {
 };
 window.SHOP_CATS = [
   { id: "bmw", fr: "Pièces auto", en: "Car parts", ico: "🚗" },
-  { id: "agro", fr: "Fruits et légumes", en: "Fruit & vegetables", ico: "🌱" },
-  { id: "tilapia", fr: "Tilapias", en: "Tilapia", ico: "🐟" },
+  { id: "agro", fr: "Fruits", en: "Fruit", ico: "🍊" },
+  { id: "legumes", fr: "Légumes", en: "Vegetables", ico: "🥬" },
+  { id: "tilapia", fr: "Poissons", en: "Fish", ico: "🐟" },
   { id: "transport", fr: "Transport et services", en: "Transport & services", ico: "🚚" }
 ];
 window.SHOP_UNITS = { piece: ["pièce", "piece"], kg: ["kg", "kg"], sac: ["sac", "bag"], carton: ["carton", "box"], caisse: ["caisse", "crate"], lot: ["lot", "lot"], litre: ["litre", "litre"] };

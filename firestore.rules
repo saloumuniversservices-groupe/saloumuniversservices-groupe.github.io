@@ -20,7 +20,7 @@ service cloud.firestore {
       return o.keys().hasOnly(['no','type','cat','items','subtotal','fee','total','zone','address','note','pay','date','slot','accept','service','details','name','phone','lang','status','createdAt'])
         && o.status == 'nouvelle' && o.accept == true
         && o.type in ['commande', 'devis']
-        && o.cat in ['bmw', 'agro', 'tilapia', 'transport']
+        && o.cat in ['bmw', 'agro', 'legumes', 'tilapia', 'transport']
         && str(o.no, 20) && str(o.name, 80) && o.name.size() >= 2 && str(o.phone, 25)
         && o.items is list && o.items.size() <= 60
         && o.total is number && o.total >= 0
@@ -35,8 +35,8 @@ service cloud.firestore {
     }
 
     // ---------- Boutiques ----------
-    // Produits : magasinier (tout), responsable agro (fruits, légumes, tilapia), vendeur (seulement le stock, pour la caisse).
-    function canStock(cat) { return isOwner() || isLegacyAdmin() || hasRole(['magasinier']) || (hasRole(['agro']) && cat in ['agro', 'tilapia']); }
+    // Produits : magasinier (tout), responsable agro (fruits, légumes, poissons), vendeur (seulement le stock, pour la caisse).
+    function canStock(cat) { return isOwner() || isLegacyAdmin() || hasRole(['magasinier']) || (hasRole(['agro']) && cat in ['agro', 'legumes', 'tilapia']); }
     match /products/{id} {
       allow read: if true;
       allow create: if canStock(request.resource.data.cat);
