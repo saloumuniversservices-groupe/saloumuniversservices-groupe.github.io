@@ -195,3 +195,4 @@ body.brand-auto .cartbtn{background:#d9382f}
 .spinbox{margin:6px 0 12px}
 .oos{font-size:13px}
 .btn.notify{background:#25d366;color:#fff;border-color:#25d366;margin-top:6px}
+.sheetin{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.sheet{overscroll-behavior:contain;touch-action:pan-y}

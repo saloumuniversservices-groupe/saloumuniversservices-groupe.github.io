@@ -186,8 +186,12 @@
   };
 
   // ---------- Panneau ----------
-  function sheet(html) { $('sheetIn').innerHTML = html; $('sheet').hidden = false; document.body.style.overflow = 'hidden'; $('sheetIn').scrollTop = 0; }
-  function close() { $('sheet').hidden = true; document.body.style.overflow = ''; if (/^#p=/.test(location.hash)) history.replaceState(null, '', '#' + cat); }
+  /* Fenêtre ouverte : la page derrière reste en place quand on fait défiler. */
+  var __lockY = 0, __locks = 0;
+  function lockScroll() { if (__locks++) return; __lockY = window.scrollY; var b = document.body.style; b.position = 'fixed'; b.top = -__lockY + 'px'; b.left = '0'; b.right = '0'; b.width = '100%'; b.overflow = 'hidden'; }
+  function unlockScroll() { if (!__locks || --__locks) return; var b = document.body.style; b.position = b.top = b.left = b.right = b.width = b.overflow = ''; window.scrollTo(0, __lockY); }
+  function sheet(html) { $('sheetIn').innerHTML = html; if ($('sheet').hidden) lockScroll(); $('sheet').hidden = false; $('sheetIn').scrollTop = 0; }
+  function close() { if (!$('sheet').hidden) unlockScroll(); $('sheet').hidden = true; if (/^#p=/.test(location.hash)) history.replaceState(null, '', '#' + cat); }
   $('sheet').onclick = function (e) { if (e.target.id === 'sheet' || e.target.closest('[data-close]')) close(); };
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('sheet').hidden) close(); });
 
