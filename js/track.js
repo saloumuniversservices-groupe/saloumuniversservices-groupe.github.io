@@ -20,6 +20,10 @@
       $('tRes').innerHTML = '<div class="card"><p class="ono">N° ' + no + '</p>' + tl +
         (o.total ? '<p><b>' + money(o.total) + ' F</b></p>' : '') + (o.date ? '<p>' + T('Livraison prévue : ', 'Planned delivery: ') + o.date + ' · ' + (o.slot || '') + '</p>' : '') +
         (o.zone ? '<p class="small muted">' + o.zone + '</p>' : '') + '</div>';
+      // Paiement Wave : vérification directe auprès de Wave (si le paiement automatique est branché).
+      fetch('https://saloum-envoi.mbow72816.workers.dev/pay/wave/status?ref=' + encodeURIComponent(no)).then(function (r) { return r.ok ? r.json() : null; }).then(function (w) {
+        if (w && w.paid) $('tRes').firstChild.insertAdjacentHTML('beforeend', '<p class="note small">✅ ' + T('Paiement Wave reçu : ', 'Wave payment received: ') + money(w.amount) + ' F</p>');
+      }).catch(function () {});
     }).catch(function () { $('tRes').innerHTML = '<div class="card">' + T('Connexion impossible. Réessayez.', 'Connection failed. Try again.') + '</div>'; });
   };
   if ($('tNo').value) $('tPh').focus();

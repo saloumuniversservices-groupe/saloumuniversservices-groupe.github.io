@@ -322,6 +322,7 @@
     var c = payCfg(), amt = money(o.total) + ' F';
     if (o.pay === 'wave') return '<div class="paybox"><p class="small muted">' + T('Montant à payer avec Wave', 'Amount to pay with Wave') + '</p><p class="payamt">' + amt + '</p>' +
       '<p class="small">' + T('Motif : ', 'Reference: ') + '<b>' + esc(o.no) + '</b>' + (c.w.number || S.wave ? ' · ' + T('Numéro : ', 'Number: ') + '<b>' + esc(c.w.number || S.wave) + '</b>' : '') + '</p>' +
+      (c.w.mode === 'auto' ? '<button type="button" class="btn wide wavebtn" data-wavepay="' + esc(o.no) + '">' + T('Payer ', 'Pay ') + amt + T(' avec Wave', ' with Wave') + '</button><p class="small muted center">' + T('Le montant est déjà rempli : confirmez seulement avec votre code Wave.', 'The amount is already filled in: just confirm with your Wave PIN.') + '</p>' : '') +
       '<div class="cta"><button type="button" class="btn small ghost dark" data-copy="' + o.total + '">' + T('Copier le montant', 'Copy amount') + '</button>' + (c.w.link ? '<a class="btn small" target="_blank" rel="noopener" href="' + esc(c.w.link) + '">' + T('Ouvrir Wave', 'Open Wave') + '</a>' : '') + '</div>' +
       '<p class="small muted">' + T('Après le paiement, envoyez-nous la capture sur WhatsApp : nous confirmons tout de suite.', 'After paying, send us the screenshot on WhatsApp: we confirm right away.') + '</p></div>';
     if (o.pay === 'om') return '<div class="paybox"><p class="small muted">' + T('Montant à payer avec Orange Money', 'Amount to pay with Orange Money') + '</p><p class="payamt">' + amt + '</p>' +
@@ -376,6 +377,15 @@
     else t += T('Total', 'Total') + ' : ' + money(o.total) + ' F · ' + (o.pay === 'wave' ? 'Wave' : o.pay === 'om' ? 'Orange Money' : T('paiement à la livraison', 'pay on delivery')) + '\n' + (o.date ? o.date + ' · ' + o.slot + '\n' : '');
     return t + o.name + ' · ' + o.phone + (o.zone ? '\n' + o.zone : '') + (o.address ? ' · ' + o.address : '');
   }
+  var RELAY = 'https://saloum-envoi.mbow72816.workers.dev';
+  document.addEventListener('click', function (e) {
+    var w = e.target.closest && e.target.closest('[data-wavepay]'); if (!w) return;
+    var lab = w.textContent; w.disabled = true; w.textContent = T('Ouverture de Wave…', 'Opening Wave…');
+    fetch(RELAY + '/pay/wave/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ no: w.dataset.wavepay }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw j; return j; }); })
+      .then(function (j) { if (j.paid) { w.textContent = '✅ ' + T('Déjà payé', 'Already paid'); return; } location.href = j.url; })
+      .catch(function () { w.disabled = false; w.textContent = lab; alert(T('Le paiement automatique n\'est pas disponible pour le moment. Payez au numéro Wave indiqué, avec le motif.', 'Automatic payment is not available right now. Pay to the Wave number shown, with the reference.')); });
+  });
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-copy]'); if (!b) return;
     var v = b.dataset.copy, ok = function () { b.textContent = T('Montant copié ✓', 'Amount copied ✓'); };

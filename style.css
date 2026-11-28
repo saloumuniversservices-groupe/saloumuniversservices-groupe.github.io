@@ -198,3 +198,4 @@ body.brand-auto .cartbtn{background:#d9382f}
 .sheetin{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.sheet{overscroll-behavior:contain;touch-action:pan-y}
 .paybox{border:1px solid #e3e7df;border-radius:12px;padding:12px;margin:8px 0;background:#fafbf9}
 .payamt{font-size:26px;font-weight:800;margin:2px 0 6px}
+.wavebtn{background:#1dc8ff;border-color:#1dc8ff;color:#06263a;font-weight:800;margin:6px 0 2px}
