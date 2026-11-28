@@ -35,7 +35,30 @@ service cloud.firestore {
     }
 
     // ---------- Boutiques ----------
-    match /products/{id} { allow read: if true; allow write: if isAdmin(); }
+    // Produits : magasinier (tout), responsable agro (fruits, légumes, tilapia), vendeur (seulement le stock, pour la caisse).
+    function canStock(cat) { return isOwner() || isLegacyAdmin() || hasRole(['magasinier']) || (hasRole(['agro']) && cat in ['agro', 'tilapia']); }
+    match /products/{id} {
+      allow read: if true;
+      allow create: if canStock(request.resource.data.cat);
+      allow update: if (canStock(resource.data.cat) && canStock(request.resource.data.cat))
+        || (hasRole(['vendeur']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'qty', 'inStock', 'updatedAt', 'updatedBy']));
+      allow delete: if isOwner();
+    }
+    // Prix d'achat : jamais visibles par le public.
+    match /productsPrivate/{id} {
+      allow read: if hasRole(['magasinier', 'comptable', 'agro']) || isLegacyAdmin();
+      allow write: if hasRole(['magasinier', 'agro']) || isLegacyAdmin();
+    }
+    // Mouvements de stock : chacun écrit les siens, personne ne modifie ni n'efface.
+    match /stockMoves/{id} {
+      allow read: if isOwner() || isStaff();
+      allow create: if (hasRole(['magasinier', 'agro', 'vendeur']) || isLegacyAdmin())
+        && request.resource.data.by == me()
+        && request.resource.data.at == request.time
+        && request.resource.data.delta is number
+        && request.resource.data.type in ['entree', 'sortie', 'correction', 'vente', 'retour', 'transfert', 'import'];
+      allow update, delete: if false;
+    }
     match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
     match /orders/{id} {
       allow create: if validOrder();
