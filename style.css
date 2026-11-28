@@ -206,7 +206,7 @@ body.brand-auto .cartbtn{background:#d9382f}
 .pp-logo{display:inline-grid;place-items:center;min-width:42px;height:26px;border-radius:7px;font-size:11px;font-weight:800;color:#fff;padding:0 6px}
 .paypick.wave .pp-logo{background:#1dc8f2}.paypick.om .pp-logo{background:#ff7900}
 .paygo{margin:6px 0;color:#fff!important;border:0}
-.paygo.wave{background:#1dc8f2}.paygo.om{background:#ff7900}
+.paygo.wave{background:#1dc8f2!important;border-color:#1dc8f2!important}.paygo.om{background:#ff7900!important;border-color:#ff7900!important}
 .btn.paid{background:#173d12!important;color:#fff!important;border-color:#173d12!important}
-.payrow{display:flex;align-items:center;gap:8px;border:1px solid #e3e7df;border-radius:10px;padding:8px 10px;margin:6px 0;background:#fff}
+.payrow{display:flex;align-items:center;gap:8px;border:1px solid #e3e7df;border-radius:10px;padding:6px 10px;margin:6px 0;background:#fff}.payrow .btn{margin:0}.paybox .payamt{font-size:26px!important;font-weight:800}
 .payrow .small{min-width:110px}.payrow b{flex:1;font-size:16px}
