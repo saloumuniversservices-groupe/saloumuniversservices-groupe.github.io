@@ -344,14 +344,29 @@
     var row = function (lab, val, copy) { return '<div class="payrow"><span class="small muted">' + lab + '</span><b>' + esc(val) + '</b><button type="button" class="btn small ghost dark" data-copy="' + esc(copy) + '">' + T('Copier', 'Copy') + '</button></div>'; };
     var steps = om ? T('Appuyez sur « Ouvrir Max it » : le numéro est copié. Dans Max it, choisissez « Transfert », collez le numéro, mettez le montant, puis votre code secret.', 'Tap “Open Max it”: the number is copied. In Max it, choose “Transfer”, paste the number, enter the amount, then your PIN.')
       : T('Appuyez sur « Ouvrir Wave » : le numéro est copié. Dans Wave, appuyez sur « Envoyer », collez le numéro, mettez le montant, puis confirmez.', 'Tap “Open Wave”: the number is copied. In Wave, tap “Send”, paste the number, enter the amount, then confirm.');
-    return '<div class="paybox"><p class="small muted">' + T('Envoyez par ', 'Send by ') + app + '</p><p class="payamt">' + amt + '</p>' +
+    if (!om && c.w.mode === 'auto') return '<div class="paybox"><p class="small muted">' + T('Montant à payer', 'Amount to pay') + '</p><p class="payamt">' + amt + '</p>' +
+      '<button type="button" class="btn wide paygo wave" data-wavepay="' + esc(o.no) + '">' + T('Payer ', 'Pay ') + amt + T(' avec Wave', ' with Wave') + '</button>' +
+      '<p class="small muted center">' + T('Wave s\'ouvre avec le montant déjà rempli : confirmez seulement avec votre code. Le paiement est vérifié automatiquement.', 'Wave opens with the amount filled in: just confirm with your PIN. Payment is checked automatically.') + '</p>' +
+      '<div class="wavefall" hidden>' + simple() + '</div></div>';
+    return '<div class="paybox">' + simple() + '</div>';
+    function simple() { return '<p class="small muted">' + T('Envoyez par ', 'Send by ') + app + '</p><p class="payamt">' + amt + '</p>' +
       row(T('Numéro ', 'Number ') + app, num, String(num).replace(/\s/g, '')) + row(T('Montant', 'Amount'), amt, o.total) +
       '<p class="small"><b>1.</b> ' + steps + '</p>' +
       '<a class="btn wide paygo ' + (om ? 'om' : 'wave') + '" href="' + appUrl(om) + '" data-num="' + esc(String(num).replace(/\s/g, '')) + '">' + T('Ouvrir ', 'Open ') + (om ? 'Max it' : 'Wave') + '</a>' +
       (om ? '<p class="small muted center">' + T('Pas d\'application ? ', 'No app? ') + '<a href="tel:%23144%23">' + T('Composez #144#', 'Dial #144#') + '</a></p>' : '') +
       '<p class="small"><b>2.</b> ' + T('Après l\'envoi, prévenez-nous avec votre numéro de commande ', 'After sending, let us know with your order number ') + '<b>' + esc(o.no) + '</b> :</p>' +
-      '<a class="btn wide paid" target="_blank" rel="noopener" href="https://wa.me/' + waNum(c.notify) + '?text=' + encodeURIComponent(paidMsg(o)) + '">✅ ' + T('J\'ai payé', 'I have paid') + '</a></div>';
+      '<a class="btn wide paid" target="_blank" rel="noopener" href="https://wa.me/' + waNum(c.notify) + '?text=' + encodeURIComponent(paidMsg(o)) + '">✅ ' + T('J\'ai payé', 'I have paid') + '</a>'; }
   }
+  /* Wave automatique (quand le gérant a branché Wave Business) : le relais crée le paiement avec le montant de la commande. */
+  var RELAY = 'https://saloum-envoi.mbow72816.workers.dev';
+  document.addEventListener('click', function (e) {
+    var w = e.target.closest && e.target.closest('[data-wavepay]'); if (!w) return;
+    var lab = w.textContent; w.disabled = true; w.textContent = T('Ouverture de Wave…', 'Opening Wave…');
+    fetch(RELAY + '/pay/wave/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ no: w.dataset.wavepay }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok || !(j.url || j.paid)) throw j; return j; }); })
+      .then(function (j) { if (j.paid) { w.textContent = '✅ ' + T('Déjà payé', 'Already paid'); return; } location.href = j.url; })
+      .catch(function () { w.disabled = false; w.textContent = lab; w.hidden = true; var f = w.parentNode.querySelector('.wavefall'); if (f) f.hidden = false; });
+  });
   function orderNo() {
     var d = new Date(), p = function (n) { return ('0' + n).slice(-2); }, r = '', c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     for (var i = 0; i < 4; i++) r += c[Math.floor(Math.random() * c.length)];
