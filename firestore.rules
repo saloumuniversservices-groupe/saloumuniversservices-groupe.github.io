@@ -44,6 +44,15 @@ service cloud.firestore {
         || (hasRole(['vendeur', 'atelier']) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'qty', 'inStock', 'updatedAt', 'updatedBy']));
       allow delete: if isOwner();
     }
+    // Vues 360° des produits : tout le monde les voit ; magasinier, responsable agro et propriétaires les font.
+    match /spins/{pid} {
+      allow read: if true;
+      allow write: if isOwner() || hasRole(['magasinier', 'agro']);
+      match /c/{k} {
+        allow read: if true;
+        allow write: if isOwner() || hasRole(['magasinier', 'agro']);
+      }
+    }
     // Prix d'achat : jamais visibles par le public.
     match /productsPrivate/{id} {
       allow read: if hasRole(['magasinier', 'comptable', 'agro']) || isLegacyAdmin();

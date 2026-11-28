@@ -191,3 +191,5 @@ body.brand-auto .tabs button.on,body.brand-auto .chips button.on{background:#1c1
 body.brand-auto .links a.shoplink.auto{background:#fff;color:#d9382f}
 body.brand-auto footer{background:#141416}
 body.brand-auto .cartbtn{background:#d9382f}
+.b360{position:absolute;top:10px;right:10px;background:#c8101e;color:#fff;font-weight:700;font-size:12px;border-radius:999px;padding:3px 9px}
+.spinbox{margin:6px 0 12px}
