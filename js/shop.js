@@ -4,7 +4,10 @@
   var T = function (fr, en) { return FR ? fr : en; };
   var CATS = window.SHOP_CATS, UNITS = window.SHOP_UNITS, MODELS = window.BMW_MODELS, COND = window.PART_COND;
   var S = JSON.parse(JSON.stringify(window.SHOP_DEFAULTS));
-  var products = [], cat = 'bmw', cart = {}, db = null, veh = {}, onlyCompat = false, loaded = false;
+  var ONLY = (root.dataset.cats || '').split(',').filter(Boolean);
+  if (ONLY.length) CATS = CATS.filter(function (c) { return ONLY.indexOf(c.id) >= 0; });
+  var SHOPK = root.dataset.shop ? '_' + root.dataset.shop : '';
+  var products = [], cat = CATS[0].id, cart = {}, db = null, veh = {}, onlyCompat = false, loaded = false;
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var money = function (n) { return Math.round(n || 0).toLocaleString('fr-FR').replace(/ | /g, ' '); };
@@ -14,8 +17,8 @@
   var weighed = function (p) { return (p.cat === 'agro' || p.cat === 'tilapia') && p.unit === 'kg'; };
   var catOf = function (id) { return CATS.filter(function (c) { return c.id === id; })[0] || {}; };
   var store = { get: function (k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
-  cart = store.get('suns_cart', {}); veh = store.get('suns_bmw', {}); onlyCompat = !!veh.only;
-  var save = function () { store.set('suns_cart', cart); };
+  cart = store.get('suns_cart' + SHOPK, {}); veh = store.get('suns_bmw', {}); onlyCompat = !!veh.only;
+  var save = function () { store.set('suns_cart' + SHOPK, cart); };
 
   // ---------- Recherche tolérante (accents, espaces dans les références, petites fautes) ----------
   var norm = function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); };
@@ -55,6 +58,7 @@
   }
 
   // ---------- Rayons ----------
+  if (CATS.length < 2) $('tabs').hidden = true;
   $('tabs').innerHTML = CATS.map(function (c) { return '<button role="tab" data-c="' + c.id + '">' + c.ico + ' ' + esc(FR ? c.fr : c.en) + '</button>'; }).join('');
   $('tabs').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; cat = b.dataset.c; history.replaceState(null, '', '#' + cat); render(); };
   $('q').oninput = render;

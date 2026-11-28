@@ -32,7 +32,7 @@ window.SHOP_DEFAULTS = {
   minOrder: 0        // montant minimum (0 = pas de minimum)
 };
 window.SHOP_CATS = [
-  { id: "bmw", fr: "Pièces BMW", en: "BMW parts", ico: "🚗" },
+  { id: "bmw", fr: "Pièces auto", en: "Car parts", ico: "🚗" },
   { id: "agro", fr: "Fruits et légumes", en: "Fruit & vegetables", ico: "🌱" },
   { id: "tilapia", fr: "Tilapias", en: "Tilapia", ico: "🐟" },
   { id: "transport", fr: "Transport et services", en: "Transport & services", ico: "🚚" }
