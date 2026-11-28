@@ -207,4 +207,4 @@ body.brand-auto .cartbtn{background:#d9382f}
 .paypick.wave .pp-logo{background:#1dc8f2}.paypick.om .pp-logo{background:#ff7900}
 .paygo{margin:6px 0;color:#fff!important;border:0}
 .paygo.wave{background:#1dc8f2}.paygo.om{background:#ff7900}
-.btn.paid{background:#173d12;color:#fff}
+.btn.paid{background:#173d12!important;color:#fff!important;border-color:#173d12!important}
