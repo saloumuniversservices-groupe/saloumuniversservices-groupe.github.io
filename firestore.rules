@@ -68,7 +68,8 @@ service cloud.firestore {
         && request.resource.data.type in ['entree', 'sortie', 'correction', 'vente', 'retour', 'transfert', 'import'];
       allow update, delete: if false;
     }
-    match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
+    // Paramètres (paiements, livraison, entreprise) : seuls les propriétaires les changent.
+    match /settings/{id} { allow read: if true; allow write: if isOwner(); }
     // Caisse : ventes numérotées. Personne ne les efface ; seul un propriétaire peut annuler (motif gardé).
     match /counters/{id} {
       allow read: if isOwner() || isStaff();

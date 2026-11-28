@@ -289,11 +289,10 @@
       '<label>' + T('Votre nom', 'Your name') + req + '<input id="cName" autocomplete="name"></label>' +
       '<label>' + T('Téléphone (WhatsApp)', 'Phone (WhatsApp)') + req + '<input id="cPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="77 123 45 67"><small class="hint">' + T('Pour vous appeler et confirmer avant la livraison.', 'So we can call you to confirm before delivery.') + '</small></label>' +
       '<label>' + T('Remarque', 'Note') + opt + '<textarea id="cNote" rows="2"></textarea></label>' +
-      '<fieldset><legend>' + T('Paiement', 'Payment') + req + '</legend><label class="rad"><input type="radio" name="pay" value="livraison" checked> ' + T('À la livraison (espèces ou Wave)', 'On delivery (cash or Wave)') + '</label>' +
-      '<label class="rad"><input type="radio" name="pay" value="wave"> ' + T('Wave maintenant', 'Wave now') + ' · ' + esc(S.wave) + '</label></fieldset>' +
+      '<fieldset><legend>' + T('Paiement', 'Payment') + req + '</legend>' + payChoices() + '</fieldset>' +
       '<label class="rad small"><input type="checkbox" id="cOk"> <span>' + T('J\'accepte les ', 'I accept the ') + '<a href="' + T('cgv.html', 'terms.html') + '" target="_blank">' + T('conditions de vente', 'terms of sale') + '</a>' + req + '</span></label>' +
       '<p id="cErr" class="err" role="alert"></p><p id="cTot" class="tot"></p><button class="btn wide" type="submit">' + T('Envoyer la commande', 'Send order') + '</button>' +
-      '<p class="muted small center">🔒 ' + T('Aucun compte à créer. Rien n\'est payé avant notre appel de confirmation, sauf si vous choisissez Wave.', 'No account needed. Nothing is paid before our confirmation call, unless you choose Wave.') + '</p></form>');
+      '<p class="muted small center">🔒 ' + T('Aucun compte à créer. Rien n\'est payé avant notre appel de confirmation, sauf si vous choisissez de payer maintenant.', 'No account needed. Nothing is paid before our confirmation call, unless you choose to pay now.') + '</p></form>');
     var tot = function () { var z = (S.zones || [])[$('cZone').value] || { fee: 0 }; $('addrL').hidden = isPickup(z); $('cTot').textContent = T('Total', 'Total') + ' : ' + money(sub + (z.fee || 0)) + ' F'; };
     $('cZone').onchange = tot; tot();
     var last = store.get('suns_me', {});
@@ -306,6 +305,31 @@
     $('cf').onsubmit = function (e) { e.preventDefault(); submitCart(l, sub, days); };
   }
 
+  /* Moyens de paiement réglés par le gérant dans Paramètres du logiciel. */
+  function payCfg() {
+    var P = S.pay || {}, w = P.wave || {}, o = P.om || {}, d = P.cod || {};
+    return { cod: d.on !== false, wave: w.on !== false && !!(w.link || w.number || S.wave), om: !!o.on && !!(o.code || o.number), w: w, o: o };
+  }
+  function payChoices() {
+    var c = payCfg(), out = [], first = true;
+    var opt = function (v, label) { var h = '<label class="rad"><input type="radio" name="pay" value="' + v + '"' + (first ? ' checked' : '') + '> ' + label + '</label>'; first = false; return h; };
+    if (c.wave) out.push(opt('wave', T('Payer maintenant avec Wave', 'Pay now with Wave')));
+    if (c.om) out.push(opt('om', T('Payer maintenant avec Orange Money', 'Pay now with Orange Money')));
+    if (c.cod || !out.length) out.push(opt('livraison', T('Payer à la livraison', 'Pay on delivery')));
+    return out.join('');
+  }
+  function payBox(o) {
+    var c = payCfg(), amt = money(o.total) + ' F';
+    if (o.pay === 'wave') return '<div class="paybox"><p class="small muted">' + T('Montant à payer avec Wave', 'Amount to pay with Wave') + '</p><p class="payamt">' + amt + '</p>' +
+      '<p class="small">' + T('Motif : ', 'Reference: ') + '<b>' + esc(o.no) + '</b>' + (c.w.number || S.wave ? ' · ' + T('Numéro : ', 'Number: ') + '<b>' + esc(c.w.number || S.wave) + '</b>' : '') + '</p>' +
+      '<div class="cta"><button type="button" class="btn small ghost dark" data-copy="' + o.total + '">' + T('Copier le montant', 'Copy amount') + '</button>' + (c.w.link ? '<a class="btn small" target="_blank" rel="noopener" href="' + esc(c.w.link) + '">' + T('Ouvrir Wave', 'Open Wave') + '</a>' : '') + '</div>' +
+      '<p class="small muted">' + T('Après le paiement, envoyez-nous la capture sur WhatsApp : nous confirmons tout de suite.', 'After paying, send us the screenshot on WhatsApp: we confirm right away.') + '</p></div>';
+    if (o.pay === 'om') return '<div class="paybox"><p class="small muted">' + T('Montant à payer avec Orange Money', 'Amount to pay with Orange Money') + '</p><p class="payamt">' + amt + '</p>' +
+      '<p class="small">' + T('Motif : ', 'Reference: ') + '<b>' + esc(o.no) + '</b>' + (c.o.code ? ' · ' + T('Code marchand : ', 'Merchant code: ') + '<b>' + esc(c.o.code) + '</b>' : '') + (c.o.number ? ' · ' + T('Numéro : ', 'Number: ') + '<b>' + esc(c.o.number) + '</b>' : '') + '</p>' +
+      '<div class="cta"><button type="button" class="btn small ghost dark" data-copy="' + o.total + '">' + T('Copier le montant', 'Copy amount') + '</button></div>' +
+      '<p class="small muted">' + T('Après le paiement, envoyez-nous la capture sur WhatsApp : nous confirmons tout de suite.', 'After paying, send us the screenshot on WhatsApp: we confirm right away.') + '</p></div>';
+    return '';
+  }
   function orderNo() {
     var d = new Date(), p = function (n) { return ('0' + n).slice(-2); }, r = '', c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     for (var i = 0; i < 4; i++) r += c[Math.floor(Math.random() * c.length)];
@@ -349,9 +373,14 @@
     var t = (o.type === 'devis' ? T('Demande de devis ', 'Quote request ') : T('Commande ', 'Order ')) + o.no + '\n';
     (o.items || []).forEach(function (it) { t += '• ' + it.qty + ' ' + unit(it.unit) + ' ' + it.name + (it.ref ? ' (' + it.ref + ')' : '') + ' : ' + money(it.qty * it.price) + ' F\n'; });
     if (o.type === 'devis') t += o.service + '\n' + o.details + '\n';
-    else t += T('Total', 'Total') + ' : ' + money(o.total) + ' F · ' + (o.pay === 'wave' ? 'Wave' : T('paiement à la livraison', 'pay on delivery')) + '\n' + (o.date ? o.date + ' · ' + o.slot + '\n' : '');
+    else t += T('Total', 'Total') + ' : ' + money(o.total) + ' F · ' + (o.pay === 'wave' ? 'Wave' : o.pay === 'om' ? 'Orange Money' : T('paiement à la livraison', 'pay on delivery')) + '\n' + (o.date ? o.date + ' · ' + o.slot + '\n' : '');
     return t + o.name + ' · ' + o.phone + (o.zone ? '\n' + o.zone : '') + (o.address ? ' · ' + o.address : '');
   }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-copy]'); if (!b) return;
+    var v = b.dataset.copy, ok = function () { b.textContent = T('Montant copié ✓', 'Amount copied ✓'); };
+    if (navigator.clipboard) navigator.clipboard.writeText(v).then(ok, ok); else ok();
+  });
   function thanks(list) {
     var tr = T('suivi.html', 'track.html');
     sheet('<div class="shead"><h3>✅ ' + T('Merci, c\'est envoyé !', 'Thank you, it\'s sent!') + '</h3><button class="x" data-close aria-label="' + T('Fermer', 'Close') + '">✕</button></div>' +
@@ -360,7 +389,7 @@
         var c = catOf(o.cat), wa = (o.type === 'devis' && /BMW/.test(o.service) && S.wa.repair) || S.wa[o.cat] || S.wa.bmw;
         return '<div class="card mini"><p class="small muted">' + c.ico + ' ' + esc(FR ? c.fr : c.en) + '</p><p class="ono">N° ' + o.no + '</p>' +
           (o.total ? '<p><b>' + money(o.total) + ' F</b>' + (o.date ? ' · ' + esc(o.date) + ', ' + esc(o.slot) : '') + '</p>' : '') +
-          (o.pay === 'wave' ? '<p class="note small">' + T('Envoyez le paiement Wave au ', 'Send the Wave payment to ') + '<b>' + esc(S.wave) + '</b>' + T(' en indiquant le numéro de commande.', ' with your order number.') + '</p>' : '') +
+          (o.total ? payBox(o) : '') +
           '<a class="btn wide" target="_blank" rel="noopener" href="https://wa.me/' + wa + '?text=' + encodeURIComponent(waText(o)) + '">💬 ' + T('Envoyer aussi sur WhatsApp', 'Also send on WhatsApp') + '</a>' +
           '<a class="btn ghost dark wide" href="' + tr + '#' + o.no + '">📦 ' + T('Suivre cette commande', 'Track this order') + '</a></div>';
       }).join(''));
