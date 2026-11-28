@@ -60,9 +60,31 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
+    // Caisse : ventes numérotées. Personne ne les efface ; seul un propriétaire peut annuler (motif gardé).
+    match /counters/{id} {
+      allow read: if isOwner() || isStaff();
+      allow create, update: if hasRole(['vendeur', 'magasinier', 'agro'])
+        && request.resource.data.keys().hasOnly(['n'])
+        && request.resource.data.n == (resource == null ? 1 : resource.data.n + 1);
+    }
+    match /sales/{id} {
+      allow read: if hasRole(['vendeur', 'magasinier', 'agro', 'comptable']);
+      allow create: if hasRole(['vendeur', 'magasinier', 'agro'])
+        && request.resource.data.by == me()
+        && request.resource.data.at == request.time
+        && request.resource.data.status == 'validee'
+        && request.resource.data.total is number && request.resource.data.total >= 0
+        && request.resource.data.items is list && request.resource.data.items.size() <= 100
+        && request.resource.data.pay in ['especes', 'wave', 'om', 'credit'];
+      allow update: if isOwner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason', 'cancelBy', 'cancelAt'])
+        && request.resource.data.status == 'annulee';
+      allow delete: if false;
+    }
     match /orders/{id} {
       allow create: if validOrder();
-      allow read, update: if isAdmin();
+      allow read: if isAdmin() || hasRole(['comptable']);
+      allow update: if isAdmin();
       allow delete: if isOwner();
     }
     match /track/{no} {

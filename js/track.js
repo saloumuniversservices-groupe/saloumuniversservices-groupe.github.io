@@ -3,7 +3,7 @@
   var FR = root.dataset.lang !== 'en', T = function (a, b) { return FR ? a : b; };
   var $ = function (id) { return document.getElementById(id); };
   var money = function (n) { return Math.round(n || 0).toLocaleString('fr-FR').replace(/ | /g, ' '); };
-  var STEPS = [['nouvelle', T('Reçue', 'Received')], ['confirmee', T('Confirmée', 'Confirmed')], ['livree', T('Livrée', 'Delivered')], ['payee', T('Payée', 'Paid')]];
+  var STEPS = [['nouvelle', T('Reçue', 'Received')], ['confirmee', T('Confirmée', 'Confirmed')], ['prete', T('Prête', 'Ready')], ['livree', T('Livrée', 'Delivered')], ['payee', T('Payée', 'Paid')]];
   if (location.hash.length > 3) $('tNo').value = decodeURIComponent(location.hash.slice(1));
   var db = null;
   if (window.SHOP_FIREBASE && window.firebase) { firebase.initializeApp(window.SHOP_FIREBASE); db = firebase.firestore(); }
